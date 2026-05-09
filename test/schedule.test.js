@@ -47,6 +47,8 @@ test("generates a valid iCalendar feed", () => {
   assert.match(calendar, /SUMMARY:元旦\(休\)/);
   assert.match(calendar, /SUMMARY:元旦\(班\)/);
   assert.match(calendar, /DTSTART;VALUE=DATE:20260101/);
-  assert.match(calendar, /DTEND;VALUE=DATE:20260104/);
+  assert.match(calendar, /DTEND;VALUE=DATE:20260102/);
+  assert.match(calendar, /DTSTART;VALUE=DATE:20260102/);
+  assert.match(calendar, /DTEND;VALUE=DATE:20260103/);
   assert.match(calendar, /END:VCALENDAR\r\n$/);
 });

@@ -1,5 +1,5 @@
 import { CALENDAR_NAME } from "./holidays.js";
-import { addDays, compactDate } from "./date-utils.js";
+import { addDays, compactDate, dateRange } from "./date-utils.js";
 import { getSchedule, getSource, supportedYears } from "./schedule.js";
 
 const encoder = new TextEncoder();
@@ -80,13 +80,15 @@ function calendarEventsForYearData(yearData) {
 
   const sourceDescription = formatSourceDescription(source);
   const holidayEvents = schedule.holidays.flatMap((holiday) =>
-    eventLines({
-      uid: makeUid([year, "holiday", holiday.start]),
-      summary: holidaySummary(holiday.name),
-      description: `中国法定节假日放假安排。${sourceDescription}`,
-      start: holiday.start,
-      end: addDays(holiday.end, 1)
-    })
+    dateRange(holiday.start, holiday.end).flatMap((date) =>
+      eventLines({
+        uid: makeUid([year, "holiday", date]),
+        summary: holidaySummary(holiday.name),
+        description: `中国法定节假日放假安排。${sourceDescription}`,
+        start: date,
+        end: addDays(date, 1)
+      })
+    )
   );
 
   const workdayEvents = schedule.workdays.flatMap((workday) =>
