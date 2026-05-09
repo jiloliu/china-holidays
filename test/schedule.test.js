@@ -44,8 +44,8 @@ test("rejects impossible calendar dates", () => {
 test("generates a valid iCalendar feed", () => {
   const calendar = createCalendar({ year: 2026 });
   assert.match(calendar, /^BEGIN:VCALENDAR\r\n/);
-  assert.match(calendar, /SUMMARY:休 元旦/);
-  assert.match(calendar, /SUMMARY:班 元旦调休上班/);
+  assert.match(calendar, /SUMMARY:元旦\(休\)/);
+  assert.match(calendar, /SUMMARY:元旦\(班\)/);
   assert.match(calendar, /DTSTART;VALUE=DATE:20260101/);
   assert.match(calendar, /DTEND;VALUE=DATE:20260104/);
   assert.match(calendar, /END:VCALENDAR\r\n$/);

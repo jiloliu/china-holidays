@@ -67,7 +67,7 @@ test("creates ICS from dynamic year data", async () => {
   });
   const calendar = createCalendarFromYearData([yearData]);
 
-  assert.match(calendar, /SUMMARY:休 元旦/);
-  assert.match(calendar, /SUMMARY:班 元旦调休上班/);
+  assert.match(calendar, /SUMMARY:元旦\(休\)/);
+  assert.match(calendar, /SUMMARY:元旦\(班\)/);
   assert.match(calendar, /NateScarlet\/holiday-cn/);
 });

@@ -44,6 +44,6 @@ test("ics endpoint is generated from dynamic holiday data", async (t) => {
 
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("content-type"), "text/calendar; charset=utf-8");
-  assert.match(body, /SUMMARY:休 元旦/);
-  assert.match(body, /SUMMARY:班 元旦调休上班/);
+  assert.match(body, /SUMMARY:元旦\(休\)/);
+  assert.match(body, /SUMMARY:元旦\(班\)/);
 });

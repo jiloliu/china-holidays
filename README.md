@@ -4,7 +4,7 @@ Cloudflare Workers 服务，用来提供中国法定节假日与调休上班日�
 
 它会输出：
 
-- `GET /china-holidays.ics`：可订阅的 iCalendar 文件，动态包含当前年份附近的 `休` 和 `班` 全天事件。
+- `GET /china-holidays.ics`：可订阅的 iCalendar 文件，动态包含当前年份附近的 `节日名称(休)` 和 `节日名称(班)` 全天事件。
 - `GET /today.json`：按 `Asia/Shanghai` 日期返回今天是否应开启工作日闹钟。
 - `GET /day.json?date=2026-10-01`：查询指定日期。
 - `GET /year.json?year=2026`：查看某年的原始数据。
@@ -59,8 +59,8 @@ https://你的-worker域名/china-holidays.ics
 
 ICS 里：
 
-- `休 节日名` 表示放假。
-- `班 节日名调休上班` 表示周末调休上班。
+- `节日名(休)` 表示放假。
+- `节日名(班)` 表示周末调休上班。
 
 ## 数据来源
 

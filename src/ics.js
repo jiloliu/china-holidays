@@ -49,6 +49,14 @@ function formatSourceDescription(source) {
     .join("；");
 }
 
+function holidaySummary(name) {
+  return `${name}(休)`;
+}
+
+function workdaySummary(name) {
+  return `${name.replace(/调休上班$/, "")}(班)`;
+}
+
 function eventLines({ uid, summary, description, start, end, status = "CONFIRMED" }) {
   return [
     "BEGIN:VEVENT",
@@ -74,7 +82,7 @@ function calendarEventsForYearData(yearData) {
   const holidayEvents = schedule.holidays.flatMap((holiday) =>
     eventLines({
       uid: makeUid([year, "holiday", holiday.start]),
-      summary: `休 ${holiday.name}`,
+      summary: holidaySummary(holiday.name),
       description: `中国法定节假日放假安排。${sourceDescription}`,
       start: holiday.start,
       end: addDays(holiday.end, 1)
@@ -84,7 +92,7 @@ function calendarEventsForYearData(yearData) {
   const workdayEvents = schedule.workdays.flatMap((workday) =>
     eventLines({
       uid: makeUid([year, "workday", workday.date]),
-      summary: `班 ${workday.name}`,
+      summary: workdaySummary(workday.name),
       description: `中国法定节假日调休上班日。${sourceDescription}`,
       start: workday.date,
       end: addDays(workday.date, 1)
@@ -112,7 +120,7 @@ export function createCalendarFromYearData(yearDataList) {
     "METHOD:PUBLISH",
     `X-WR-CALNAME:${escapeText(CALENDAR_NAME)}`,
     "X-WR-TIMEZONE:Asia/Shanghai",
-    `X-WR-CALDESC:${escapeText("中国法定节假日与调休安排，包含“休”和“班”事件。")}`
+    `X-WR-CALDESC:${escapeText("中国法定节假日与调休安排，事件标题使用“节日名称(休)”和“节日名称(班)”。")}`
   ];
 
   for (const yearData of yearDataList) {
