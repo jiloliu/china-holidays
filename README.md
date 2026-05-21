@@ -8,6 +8,9 @@ Cloudflare Workers 服务，用来提供中国法定节假日与调休上班日�
 - `GET /today.json`：按 `Asia/Shanghai` 日期返回今天是否应开启工作日闹钟。
 - `GET /day.json?date=2026-10-01`：查询指定日期。
 - `GET /year.json?year=2026`：查看某年的原始数据。
+- `GET /vpn/clash.yaml`：Clash/Mihomo `rules:` YAML，包含直连与代理规则。
+- `GET /vpn/proxy-provider.yaml`：Clash/Mihomo classical rule-provider 代理规则。
+- `GET /vpn/direct-provider.yaml`：Clash/Mihomo classical rule-provider 直连规则。
 
 默认数据源是 `NateScarlet/holiday-cn` 的在线 JSON，Worker 会在运行时拉取：
 
@@ -29,6 +32,7 @@ npm run dev
 ```text
 http://localhost:8787/china-holidays.ics
 http://localhost:8787/today.json
+http://localhost:8787/vpn/clash.yaml
 ```
 
 部署到 Cloudflare Workers：
@@ -63,6 +67,79 @@ ICS 里：
 - `节日名(班)` 表示周末调休上班。
 
 为了方便快捷指令按“当天日历事件”判断，连续假期会拆成每天一个全天事件，而不是一个跨多天长日程。例如春节 9 天会生成 9 个 `春节(休)` 全天事件。
+
+## VPN 规则
+
+当前 Worker 同时提供 Clash/Mihomo 风格的 YAML 规则：
+
+```text
+https://你的-worker域名/vpn/clash.yaml
+https://你的-worker域名/vpn/proxy-provider.yaml
+https://你的-worker域名/vpn/direct-provider.yaml
+```
+
+默认策略名：
+
+- `PROXY`：需要代理。
+- `DIRECT`：直连。
+- 兜底规则默认为 `PROXY`。
+
+如果你的 Clash/Mihomo 配置里策略组叫 `🚀 节点选择`，可以这样传参：
+
+```text
+https://你的-worker域名/vpn/clash.yaml?proxy=🚀%20节点选择&direct=DIRECT
+```
+
+如果你想让未知域名默认直连：
+
+```text
+https://你的-worker域名/vpn/clash.yaml?fallback=direct
+```
+
+规则顺序是：
+
+1. 局域网和私有 IP 直连。
+2. 常见中国大陆域名直连。
+3. 常见海外服务和开发者服务走代理。
+4. `GEOIP,CN,DIRECT`。
+5. `MATCH,PROXY` 或你指定的兜底策略。
+
+规则数据已经抽离到 `src/vpn-rules-data.js`。后续你只需要修改这个文件里的：
+
+- `DIRECT_RULES.domainSuffixes`
+- `DIRECT_RULES.ipCidrs`
+- `DIRECT_RULES.ipCidr6s`
+- `PROXY_RULES.domainSuffixes`
+- `PROXY_RULES.ipCidrs`
+- `PROXY_RULES.ipCidr6s`
+
+生成 YAML 的代码在 `src/vpn-rules.js`，一般不用改。当前代理列表额外覆盖了云原生开发常见链路，包括 Docker Hub、GHCR、Quay、Kubernetes Registry、Helm、Terraform/HashiCorp、AWS/Azure/GCP 镜像与 API、npm/PyPI/Go/Rust/Maven/Gradle 等包仓库。
+
+如果你想用远程 rule-provider，可以在主配置里这样引用：
+
+```yaml
+rule-providers:
+  my-proxy:
+    type: http
+    behavior: classical
+    format: yaml
+    interval: 86400
+    path: ./ruleset/my-proxy.yaml
+    url: "https://你的-worker域名/vpn/proxy-provider.yaml"
+  my-direct:
+    type: http
+    behavior: classical
+    format: yaml
+    interval: 86400
+    path: ./ruleset/my-direct.yaml
+    url: "https://你的-worker域名/vpn/direct-provider.yaml"
+
+rules:
+  - RULE-SET,my-direct,DIRECT
+  - RULE-SET,my-proxy,PROXY
+  - GEOIP,CN,DIRECT
+  - MATCH,PROXY
+```
 
 ## 数据来源
 

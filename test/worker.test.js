@@ -47,3 +47,30 @@ test("ics endpoint is generated from dynamic holiday data", async (t) => {
   assert.match(body, /SUMMARY:元旦\(休\)/);
   assert.match(body, /SUMMARY:元旦\(班\)/);
 });
+
+test("vpn clash endpoint returns YAML rules", async () => {
+  const response = await worker.fetch(new Request("https://example.test/vpn/clash.yaml?proxy=Proxy&fallback=direct"));
+  const body = await response.text();
+
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("content-type"), "text/yaml; charset=utf-8");
+  assert.match(body, /^rules:\n/m);
+  assert.match(body, /DOMAIN-SUFFIX,openai.com,Proxy/);
+  assert.match(body, /DOMAIN-SUFFIX,cn,DIRECT/);
+  assert.match(body, /MATCH,DIRECT/);
+});
+
+test("vpn provider endpoints return policy-free payload rules", async () => {
+  const proxyResponse = await worker.fetch(new Request("https://example.test/vpn/proxy-provider.yaml"));
+  const proxyBody = await proxyResponse.text();
+  const directResponse = await worker.fetch(new Request("https://example.test/vpn/direct-provider.yaml"));
+  const directBody = await directResponse.text();
+
+  assert.equal(proxyResponse.status, 200);
+  assert.match(proxyBody, /^payload:\n/m);
+  assert.match(proxyBody, /DOMAIN-SUFFIX,openai.com/);
+  assert.doesNotMatch(proxyBody, /DOMAIN-SUFFIX,openai.com,PROXY/);
+  assert.equal(directResponse.status, 200);
+  assert.match(directBody, /DOMAIN-SUFFIX,cn/);
+  assert.doesNotMatch(directBody, /DOMAIN-SUFFIX,openai.com/);
+});

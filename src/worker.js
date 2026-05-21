@@ -2,6 +2,7 @@ import { createCalendarFromYearData } from "./ics.js";
 import { shanghaiDate } from "./date-utils.js";
 import { loadYearData } from "./holiday-cn.js";
 import { getDayStatusFromYearData, hasScheduleData, supportedYears } from "./schedule.js";
+import { createClashProviderYaml, createClashRulesYaml, parseVpnPolicyOptions } from "./vpn-rules.js";
 
 const JSON_HEADERS = {
   "content-type": "application/json; charset=utf-8",
@@ -11,6 +12,11 @@ const JSON_HEADERS = {
 const ICS_HEADERS = {
   "content-type": "text/calendar; charset=utf-8",
   "content-disposition": 'inline; filename="china-holidays.ics"',
+  "cache-control": "public, max-age=3600"
+};
+
+const YAML_HEADERS = {
+  "content-type": "text/yaml; charset=utf-8",
   "cache-control": "public, max-age=3600"
 };
 
@@ -81,6 +87,9 @@ function home(url) {
       `Today JSON: ${origin}/today.json`,
       `Date JSON: ${origin}/day.json?date=2026-10-01`,
       `Year JSON: ${origin}/year.json?year=2026`,
+      `VPN Clash rules: ${origin}/vpn/clash.yaml`,
+      `VPN proxy provider: ${origin}/vpn/proxy-provider.yaml`,
+      `VPN direct provider: ${origin}/vpn/direct-provider.yaml`,
       "",
       `Static fallback years: ${supportedYears().join(", ")}`
     ].join("\n")
@@ -100,6 +109,39 @@ async function handleRequest(request) {
 
   if (url.pathname === "/healthz") {
     return text("ok");
+  }
+
+  if (url.pathname === "/vpn" || url.pathname === "/vpn/index.txt") {
+    return text(
+      [
+        "VPN rule endpoints",
+        "",
+        `${url.origin}/vpn/clash.yaml`,
+        `${url.origin}/vpn/proxy-provider.yaml`,
+        `${url.origin}/vpn/direct-provider.yaml`,
+        "",
+        "Query parameters:",
+        "proxy=PROXY",
+        "direct=DIRECT",
+        "fallback=proxy|direct|CUSTOM_POLICY"
+      ].join("\n")
+    );
+  }
+
+  if (url.pathname === "/vpn/clash.yaml" || url.pathname === "/vpn/rules.yaml") {
+    try {
+      return new Response(createClashRulesYaml(parseVpnPolicyOptions(url.searchParams)), { headers: YAML_HEADERS });
+    } catch (error) {
+      return json({ error: error.message }, { status: 400 });
+    }
+  }
+
+  if (url.pathname === "/vpn/proxy-provider.yaml" || url.pathname === "/vpn/clash-provider.yaml") {
+    return new Response(createClashProviderYaml("proxy"), { headers: YAML_HEADERS });
+  }
+
+  if (url.pathname === "/vpn/direct-provider.yaml") {
+    return new Response(createClashProviderYaml("direct"), { headers: YAML_HEADERS });
   }
 
   if (url.pathname === "/china-holidays.ics" || url.pathname === "/holidays.ics") {
@@ -169,7 +211,15 @@ async function handleRequest(request) {
   return json(
     {
       error: "Not found",
-      routes: ["/china-holidays.ics", "/today.json", "/day.json?date=YYYY-MM-DD", "/year.json?year=YYYY"]
+      routes: [
+        "/china-holidays.ics",
+        "/today.json",
+        "/day.json?date=YYYY-MM-DD",
+        "/year.json?year=YYYY",
+        "/vpn/clash.yaml",
+        "/vpn/proxy-provider.yaml",
+        "/vpn/direct-provider.yaml"
+      ]
     },
     { status: 404 }
   );
